@@ -1,6 +1,6 @@
 --- 
-title: "Skeleton Tutorial Template"
-author: "TJ McKinley"
+title: "Case Study 0: 1995 DRC Ebola outbreak"
+author: "Danny Scarponi"
 site: bookdown::bookdown_site
 output:
     bookdown::pdf_book:
@@ -18,9 +18,105 @@ documentclass: book
 link-citations: yes
 description: "Skeleton Tutorial Template"
 ---
+# Introduction
+This is the first of a series of tutorials that illustrate the process for using the Bayes Linear History Matching with Emulation (HME) package [emulatorr](https://github.com/Tandethsquire/emulatorr). 
 
-# Opening page
 
+# Description of epidemiological problem
+The case study is based on an outbreak of Ebola Hemorrhagic Fever that took place in Kikwit, Democratic Republic of the Congo, in 1995. We give here a brief description of the circumstances in which the epidemic originated and of the measures put in place to characterize and contain it. More details about the outbreak can be found in the article [The Reemergence of Ebola Hemorrhagic Fever, Democratic Republic of the Congo, 1995](https://academic.oup.com/jid/article/179/Supplement_1/S76/882543.), by Khan et al.
+
+In May 1995, the Centers for Disease Control and Prevention
+(CDC) was notified of an outbreak of viral hemorrhagic fever in Kikwit, DRC. Specimens sent to Belgium were forwarded to CDC for diagnostic
+testing, and the presence of acute or recent EBO virus infection
+was confirmed for all 14 persons tested.
+Within 48 h of diagnostic
+confirmation, a multinational contingent led by the World Health Organization (WHO), composed of physicians, epidemiologists, sanitarians, health educators, and logistic support
+personnel were dispatched to assist DRC authorities in controlling and characterizing the outbreak.
+
+**Index Patient and Initial Cluster of Cases**
+The first identified case-patient was GM, a 42-year-old male
+charcoal worker and farmer who became ill on 6 January
+and died of a febrile hemorrhagic disease at Kikwit General Hospital on 13 January 1995. He directly infected at least 3 members of his family, all of whom died, and an additional 10 secondary cases (all fatal) occurred among members of his extended family over the next 9 weeks in an area encompassing Kikwit and 3 surrounding villages.
+
+In ealy April1995, a small nosocomial cluster of EBO 
+cases among the nursing staff at Kikwit II Maternity Hospital 
+was first recognized but misdiagnosed as epidemic dysentery. 
+Toward the end of April, a similar nosocomial cluster was 
+identified at Kikwit General Hospital among the operating room
+staff who participated in a surgical procedure on a laboratory technician
+employed at Kikwit II Maternity Hospital.
+
+**Surveillance and case-finding**
+
+
+**Time course of the Epidemic**
+At least four generations of cases were traced through the hospital and into the community from the initial nosocomial cases in Kikwit General Hospital (figure 1).
+
+
+# Description of model and input parameters
+We consider a stochastic (continuous/discrete time?) SEIR model. The human host population is divided into the categories of susceptible (S), infected, but not yet infectious (E), infectious (I) and removed (R). Assuming a homogeneous closed population of size $N$ (i.e. with negligible births, deaths or migration) and homogeneous mixing within the population, the rate of transition of an individual from $S\rightarrow E$ can be modelled as being proportional to the proportion of infective individuals in the population. The rates of transition from $E \rightarrow I$ and 
+$I \rightarrow R$ are constant.   
+
+If $S_t, E_t, I_t$ and $R_t$ are the numbers of susceptible, infected but not yet infectious, infectious and removed individuals in the population at time $t$, and $dt$ is a vanishingly small time period such that only one event can occur in $[t,t+dt]$, then we can write the probabilities of events within the population as 
+\begin{align}
+P(S\rightarrow E)&=\beta N^{-1}S_t I_t dt+ o(dt) (\#eq:align1) \\
+P(E\rightarrow I)&= \delta E_tdt+o(dt)  (\#eq:align2)\\
+P(I\rightarrow R)&= \gamma I_tdt +o(dt) (\#eq:align3)
+\end{align} 
+The notation $S\rightarrow E$ corresponds to the movement of a single individual from the state $S$ to the state $E$ (likewise for the other possible transitions). Here $\beta$ is the transition parameter, $\delta^{-1}$ is the mean incubation period and $\gamma^{-1}$ is the mean infectious period. While we assume $\delta$ and $\gamma$ to be constant, we will let $\beta$ be time-dependent. This is because we need to account for the intervention strategies put in place to control the spread of Ebola. We assume that the transmission rate is constant up to the point of intervention $t_{\text{int}}$, before decaying exponentially to zero:
+\begin{equation} \beta_t =
+  \begin{cases}
+    \beta \quad&   t< t_\text{int}  \\
+    \beta e^{-q(t-t_{\text{int}})} & t\geq t_\text{int}.
+  \end{cases}   (\#eq:betat)
+\end{equation}
+Note that the $\gamma$ is not affected by the interventions, since the disease is not curable.
+
+The epidemic model specified by \@ref(eq:align1)-\@ref(eq:betat) has parameter vector $\Theta=\{\beta, q, \gamma, \delta\}$, which we would like to estimate from the available data.
+
+# Description of fitting outputs
+## Description of data on 1995 Ebola DRC outbreak
+The data consist of two time series
+(see Figure below) recorded from March 1 to July 16, namely,
+daily counts of Ebola cases by date of symptom onset, accounting
+for a total of 291 cases, and daily counts of deaths
+from Ebola, accounting for a total of 236 deaths. It is also
+documented that the first case became ill on January 6, 1995,
+the last case died on July 16, and a total of 316 cases were
+identified resulting in a rate of 81% fatality. 
+
+The epidemic lasted for about 200 days with control measures
+being introduced about 130 days after the start of the
+epidemic. The exact starting time and evolution of the epidemic
+prior to March 1 is unobserved. Furthermore, from the
+total number of 316 identified cases, it can be deduced that
+the dates of symptom onset for 25 cases and the dates of removal
+from the infectious class for 80 cases are not reported
+in the given time series.
+
+```{r, echo=FALSE}
+library(knitr)
+library(png)
+knitr::include_graphics("timeseries.png.PNG")
+```
+
+
+## Missing data handling
+# Description of calibration methodology
+## Construction of emulators
+### General structure of an emulator (role of various parameters)
+### Sampling points (training/validation points)
+### Training first emulators           
+## Emulator diagnostics 
+### Implausibility measure (choice of cut-off)
+### Various forms of diagnostics 
+#### Simulator/emulator outputs comparison 
+#### Standard error of emulator outputs 
+#### Emulator/simulator implausibility 
+## Points generation 
+## Further waves
+<!--
+# TJ material
 ```{r, child = "_setup.Rmd", include = F, purl = F, cache = F}
 ```
 
@@ -303,3 +399,4 @@ Two options:
 ```
 
 The `titles` option can be set as before.
+-->
