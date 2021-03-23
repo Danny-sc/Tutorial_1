@@ -1,6 +1,6 @@
 --- 
-title: "Case Study 0: 1995 DRC Ebola outbreak"
-author: "Danny Scarponi"
+title: "Tutorial 1: An introduction to History Matching and Emulation through the Emulatorr package"
+author: "Andy Iskauskas, Danny Scarponi"
 site: bookdown::bookdown_site
 output:
     bookdown::pdf_book:
@@ -10,117 +10,276 @@ output:
         config:
             sharing: null
         css: 'style.css'
+        highlight: tango
         includes:
             in_header: _toggle.html
         keep_md: TRUE
 linkcolor: blue
 documentclass: book
 link-citations: yes
-description: "Skeleton Tutorial Template"
+description: "An overview of the history matching with emulation process"
 ---
-# Introduction
-This is the first of a series of tutorials that illustrate the process for using the Bayes Linear History Matching with Emulation (HME) package [emulatorr](https://github.com/Tandethsquire/emulatorr). 
 
+```{r, child = "_setup.Rmd", include = F, purl = F, cache = TRUE}
+```
 
-# Description of epidemiological problem
-The case study is based on an outbreak of Ebola Hemorrhagic Fever that took place in Kikwit, Democratic Republic of the Congo, in 1995. We give here a brief description of the circumstances in which the epidemic originated and of the measures put in place to characterize and contain it. More details about the outbreak can be found in the article [The Reemergence of Ebola Hemorrhagic Fever, Democratic Republic of the Congo, 1995](https://academic.oup.com/jid/article/179/Supplement_1/S76/882543.), by Khan et al.
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 12,
+  fig.height = 8,
+  cache = TRUE
+)
+```
 
-In May 1995, the Centers for Disease Control and Prevention
-(CDC) was notified of an outbreak of viral hemorrhagic fever in Kikwit, DRC. Specimens sent to Belgium were forwarded to CDC for diagnostic
-testing, and the presence of acute or recent EBO virus infection
-was confirmed for all 14 persons tested.
-Within 48 h of diagnostic
-confirmation, a multinational contingent led by the World Health Organization (WHO), composed of physicians, epidemiologists, sanitarians, health educators, and logistic support
-personnel were dispatched to assist DRC authorities in controlling and characterizing the outbreak.
-
-**Index Patient and Initial Cluster of Cases**
-The first identified case-patient was GM, a 42-year-old male
-charcoal worker and farmer who became ill on 6 January
-and died of a febrile hemorrhagic disease at Kikwit General Hospital on 13 January 1995. He directly infected at least 3 members of his family, all of whom died, and an additional 10 secondary cases (all fatal) occurred among members of his extended family over the next 9 weeks in an area encompassing Kikwit and 3 surrounding villages.
-
-In ealy April1995, a small nosocomial cluster of EBO 
-cases among the nursing staff at Kikwit II Maternity Hospital 
-was first recognized but misdiagnosed as epidemic dysentery. 
-Toward the end of April, a similar nosocomial cluster was 
-identified at Kikwit General Hospital among the operating room
-staff who participated in a surgical procedure on a laboratory technician
-employed at Kikwit II Maternity Hospital.
-
-**Surveillance and case-finding**
-
-
-**Time course of the Epidemic**
-At least four generations of cases were traced through the hospital and into the community from the initial nosocomial cases in Kikwit General Hospital (figure 1).
-
-
-# Description of model and input parameters
-We consider a stochastic (continuous/discrete time?) SEIR model. The human host population is divided into the categories of susceptible (S), infected, but not yet infectious (E), infectious (I) and removed (R). Assuming a homogeneous closed population of size $N$ (i.e. with negligible births, deaths or migration) and homogeneous mixing within the population, the rate of transition of an individual from $S\rightarrow E$ can be modelled as being proportional to the proportion of infective individuals in the population. The rates of transition from $E \rightarrow I$ and 
-$I \rightarrow R$ are constant.   
-
-If $S_t, E_t, I_t$ and $R_t$ are the numbers of susceptible, infected but not yet infectious, infectious and removed individuals in the population at time $t$, and $dt$ is a vanishingly small time period such that only one event can occur in $[t,t+dt]$, then we can write the probabilities of events within the population as 
-\begin{align}
-P(S\rightarrow E)&=\beta N^{-1}S_t I_t dt+ o(dt) (\#eq:align1) \\
-P(E\rightarrow I)&= \delta E_tdt+o(dt)  (\#eq:align2)\\
-P(I\rightarrow R)&= \gamma I_tdt +o(dt) (\#eq:align3)
-\end{align} 
-The notation $S\rightarrow E$ corresponds to the movement of a single individual from the state $S$ to the state $E$ (likewise for the other possible transitions). Here $\beta$ is the transition parameter, $\delta^{-1}$ is the mean incubation period and $\gamma^{-1}$ is the mean infectious period. While we assume $\delta$ and $\gamma$ to be constant, we will let $\beta$ be time-dependent. This is because we need to account for the intervention strategies put in place to control the spread of Ebola. We assume that the transmission rate is constant up to the point of intervention $t_{\text{int}}$, before decaying exponentially to zero:
-\begin{equation} \beta_t =
-  \begin{cases}
-    \beta \quad&   t< t_\text{int}  \\
-    \beta e^{-q(t-t_{\text{int}})} & t\geq t_\text{int}.
-  \end{cases}   (\#eq:betat)
-\end{equation}
-Note that the $\gamma$ is not affected by the interventions, since the disease is not curable.
-
-The epidemic model specified by \@ref(eq:align1)-\@ref(eq:betat) has parameter vector $\Theta=\{\beta, q, \gamma, \delta\}$, which we would like to estimate from the available data.
-
-# Description of fitting outputs
-## Description of data on 1995 Ebola DRC outbreak
-The data consist of two time series
-(see Figure below) recorded from March 1 to July 16, namely,
-daily counts of Ebola cases by date of symptom onset, accounting
-for a total of 291 cases, and daily counts of deaths
-from Ebola, accounting for a total of 236 deaths. It is also
-documented that the first case became ill on January 6, 1995,
-the last case died on July 16, and a total of 316 cases were
-identified resulting in a rate of 81% fatality. 
-
-The epidemic lasted for about 200 days with control measures
-being introduced about 130 days after the start of the
-epidemic. The exact starting time and evolution of the epidemic
-prior to March 1 is unobserved. Furthermore, from the
-total number of 316 identified cases, it can be deduced that
-the dates of symptom onset for 25 cases and the dates of removal
-from the infectious class for 80 cases are not reported
-in the given time series.
-
-```{r, echo=FALSE}
+``` {r echo = FALSE, message = FALSE}
+library(emulatorr)
+library(purrr)
+library(SimInf)
+library(lhs)
 library(knitr)
-library(png)
-knitr::include_graphics("timeseries.png.PNG")
+library(ggplot2)
+```
+
+# Introduction
+
+This short tutorial gives an overview of history matching with emulation and shows how to implement this technique in a one-dimensional example through the emulatorr package. 
+
+In this section we introduce the concepts of history matching and emulation and explain how their combined use provide us with a way of calibrating complex computer models.
+
+Computer models, otherwise known as simulators, have been widely used in almost all fields in science and technology. 
+A computer model is a way of representing the  fundamental dynamics of a system. Due to the complexity of the interactions within a system, computer models frequently contain large numbers of parameters. 
+
+Before using a model (e.g. for prediction or planning) it is fundamental to explore plausible values for its parameters, calibrating the model to the observed data. This poses a significant problem, considering that it may take several minutes or even hours for the evaluation of a single scenario of a complex model. This difficulty is compounded for stochastic models, when tens to thousands of realisations can be required for each scenario.  As a consequence, comprehensive analysis of the entire input space, requiring vast numbers of model evaluations, is often unfeasible. Emulation, combined with history matching, allows us to overcome this issue.
+
+## History Matching
+
+History matching concerns the problem of identifying those parameter sets that would give rise to acceptable matches between the model outputs and the observed data. This part of the input space is referred to as non-implausible, while its complement is known as implausible. History matching proceeds as a series of iterations, or waves, where implausible parameter sets are identified and discarded. Each wave focuses the search for implausible space in the space that was characterized as non-implausible in all previous waves: thus the non-implausible space shrinks with each iteration. To decide whether a parameter set $x$ is implausible we introduce the implausibility measure, which evaluates the difference between the emulator and computer model results, weighted by how uncertain we are at $x$. If such measure is too high, the parameter set is discarded in the next wave of the process. 
+
+Note that history matching as just described still relies on the evaluation of the model at a large number of parameter sets, which is often unfeasible. Here is where emulators play a crucial role.
+
+## Emulators   
+
+A long established method for handling computationally expensive models is to first construct an emulator: a fast statistical approximation of the model that can be used as a surrogate. In other words, we can think of an emulator as a way of representing our 
+<span class="abbr" title="In Bayesian statistics, probability expresses a degree of belief in an event. Such belief can be based either on prior knowledge or on personal beliefs about the event. Note that this approach differs from the frequentist interpretation, that defines the probability of an event as the limit of its relative frequence in many trials."><abbr title="In Bayesian statistics, probability expresses a degree of belief in an event. Such belief can be based either on prior knowledge or on personal beliefs about the event. Note that this approach differs from the frequentist interpretation, that defines the probability of an event as the limit of its relative frequence in many trials.">beliefs</abbr></span> about the behaviour of a complex model. 
+
+First of all the model is run at a manageable number of parameter sets, to provide training data to build the emulator. Then prior beliefs about the structure of the emulator are set to reflect our prior knowledge. Once this is done, the training data can be exploited to adjust our prior beliefs and obtain a more accurate representation of the model. The trained emulator  will then provide an expected value of the model output at any parameter set $x$, along with a corresponding uncertainty estimate reflecting our beliefs about the uncertainty in the approximation. 
+
+Emulators have two advantages. First, they are computationally efficient - typically several orders of magnitude faster than the computer models they approximate. Second, they allow for the uncertainty in their approximations to be taken into account. These two properties mean that emulators can be used to make inferences as a surrogate for the model itself. In particular, when going through the history matching process, it is possible to evaluate the implausibility measure at any given parameter set by comparing the observed data to the emulator output, rather than the model output. This speeds up the process and allows for a comprehensive exploration of the input space.
+
+## History matching and emulation in a nutshell
+Figure \@ref(fig:fig3)  shows a typical history matching workflow. 
+
+``` {r, fig3, echo = FALSE, out.width = "90%", fig.cap='History matching and emulation flowchart'}
+knitr::include_graphics('hmeflowchart.png')
+```
+
+The various steps of the process can be summarised as follows.
+
+1) A number of parameter sets (design points) are selected. 
+2) The model (simulator) is run at the design points.
+3) Emulators are built using the training data provided by the previous step. Note that here we initially choose to construct separate emulators, one for the mean of each model output, but more advanced approaches are possible.
+3) Emulators are evaluated at a large number of parameter sets. The implausibility of each of these is then assessed.
+4) Parameter sets classified as non-implausible provide the design points for the next wave of the process. From here, we go back to step 2).
+
+In the next section we give a very simple example of history matching and emulation to help the reader familiarise themselves with the procedure.
+
+# One-dimensional Example
+
+To show how history matching and emulation work, we present an example with a one-dimensional emulator. Our focus here is on the various steps of the process, rather than on the use of the emulatorr package. A more detailed introduction to the functionalities of emulatorr can be found in Tutorial 2 (hyperlink).
+
+## Setup
+
+The model we consider is a single univariate deterministic function:
+
+\(f(x) = 2x + 3x\sin\left(\frac{5\pi(x-0.1)}{0.4}\right).\)
+
+Through this very simple example we demonstrate the main features of emulation and history matching over a couple of waves. Moreover, since $f(x)$ can be evaluated quickly, we will be able to compare the emulator performance against the actual function very easily.
+
+```{r}
+func <- function(x) {
+  2*x + 3*x*sin(5*pi*(x-0.1)/0.4)
+}
+```
+
+We will presume that we want to emulate this function over the input range $x\in[0,0.6]$. To train an emulator to this function, we'll evaluate $f$ at equally spaced-out points along the parameter range: $10$ points will be ample for training a one-dimensional emulator.
+
+```{r}
+data1d <- data.frame(x = seq(0.05, 0.5, by = 0.05), f = func(seq(0.05, 0.5, by = 0.05)))
+```
+
+For demonstration purposes we put no points between $0.5$ and $0.6$ in `data1d`: we will comment on the effects of this choice at the end of the first wave. Note that the value of $f$ is considered unknown for all values of $x$ outside `data1d`. The points in `data1d` will be passed to the emulatorr package, in order for it to train an emulator to the function `func`, interpolate points between the data points above, and propose a new set of points for training a second-wave emulator.
+
+## Emulator Training
+
+To train the emulator, we first define the ranges of the parameters. Note that we create a list of one element, which seems pointless here but generalises easily to multi-output emulation.
+
+```{r}
+ranges1d <- list(x = c(0, 0.6))
+```
+
+The emulatorr package adopts a Bayes Linear approach: it first builds a preliminary version of the emulator representing our prior knowledge and then trains the definitive emulator using the training data with Bayes Linear update formulae (see Appendix B in Tutorial 2 for a brief introduction to Bayes Linear Emulation). 
+
+The preliminary version of the emulator is obtained though the function `emulator_from_data`, which requires at least three things: the training data `data1d`, the name(s) of the outputs to emulate, and the ranges of the input parameters `ranges1d`:
+
+```{r}
+pre_em1d_1 <- emulator_from_data(data1d, c('f'), ranges1d, deltas = 0, lik.method = 'nl')
+```
+
+Note that an extra parameter has been provided to `emulator_from_data`: `deltas = 0`. This coefficient plays an important role in regularising covariance matrices in higher dimensions; since we are now working in one dimension, we set `deltas` to zero. An in-depth discussion of the $\delta$ coefficient can be found in Tutorial 2, section 3).
+
+We are now ready to update our preliminary emulator through the Bayes Linear update formulae. This is done by applying the `adjust` method to `pre_em1d_1` (note that `pre_em1d_1` is inside a list of length one, to allow for an easy generalisation to multi-output emulation):
+
+```{r}
+em1d_1 <- pre_em1d_1[[1]]$adjust(data1d, 'f')
+```
+
+This trained emulator takes into account the fact that we know the values at the 10 points in the dataset. Correspondingly, the variance at these ten points (which we get through the `get_cov` method) is $0$ and the expectation  (which we get through the `get_exp` method) exactly matches the function value (up to numerical precision). 
+
+```{r}
+em1d_1$get_cov(data1d)
+em1d_1$get_exp(data1d) - data1d$f
+```
+
+We can use this trained emulator to predict the value at many points along the input range. Let's define a large set of points to evaluate at, and get the emulator expectation and variance at each of these points.
+
+```{r}
+test_points <- data.frame(x = seq(0, 0.6, by = 0.001))
+em_exp <- em1d_1$get_exp(test_points)
+em_var <- em1d_1$get_cov(test_points)
+```
+
+Because in this particular example the function to emulate is straightforward to evaluate, we will put all the test points into the actual function too. We create a data.frame with everything we need for plotting.
+
+```{r}
+plotting1d <- data.frame(
+  x = test_points$x,
+  f = func(test_points$x),
+  E = em_exp,
+  max = em_exp + 3*sqrt(em_var),
+  min = em_exp - 3*sqrt(em_var)
+)
+```
+
+We now plot a set of items: the actual function (in black), the emulator expectation for the function (in blue), and $3\sigma$ uncertainty bounds corresponding to the emulator variance (in red). We also plot the locations of the training points to demonstrate the vanishing variance at those points.
+
+```{r fig.width = 7, fig.height = 7}
+plot(data = plotting1d, f ~ x, ylim = c(min(plotting1d[,-1]), max(plotting1d[,-1])),
+     type = 'l', main = "Emulation of a Simple 1-dimensional Function", xlab = "Parameter value", 
+     ylab = "Function value")
+lines(data = plotting1d, E ~ x, col = 'blue')
+lines(data = plotting1d, min ~ x, col = 'red', lty = 2)
+lines(data = plotting1d, max ~ x, col = 'red', lty = 2)
+points(data = data1d, f ~ x, pch = 16, cex = 1)
+legend('topleft', inset = c(0.05, 0.05), legend = c("Function value", "Emulated value", "Uncertainty Bounds"),
+       col = c('black', 'blue', 'red'), lty = c(1,1,2))
+```
+
+We can note a few things from this plot. Firstly, the emulator does exactly replicate the function at the points used to train it (the black dots). The variance, i.e. the distance between the two red lines, increases the further away we get from a 'known' point, and indeed the emulator expectation starts to deviate from the actual function value. This is evident if we look at the area in between $0.5$ and $0.6$: since `data1d` contains no value in that interval, our emulator is particularly uncertain there. However, note that the actual value (the black line) never falls outside the $3\sigma$ bounds given by the emulator variance.
+
+## History Matching
+
+Now suppose that we want to find input points which result in a given output value. Obviously, with this function we can easily do this either analytically or numerically, but for complex simulations and models this is simply not possible. We therefore follow the history matching approach.
+
+The first thing we need is a target value: let's suppose we want to find points $x$ such that $f(x)=0$, plus or minus $0.05$. Then we define our target as follows:
+
+```{r}
+target1d <- list(f = list(val = 0, sigma = 0.05))
+```
+
+Again, the use of a list of lists is to ensure it generalises to multiple outputs.
+
+We can now use the function `generate_new_runs` to obtain a new set of points for the second wave. This function takes the trained emulator, the range of the parameter, the number of points to propose and the target name:
+
+```{r}
+new_points1d <- generate_new_runs(list(em1d_1), ranges1d, 10, target1d, method = 'lhs', include_line - FALSE)
+```
+
+The last two specifications, `method` and `include_line`, are optional (more details on these can be found in Tutorial 2, section 3). The output `new_points1d` consists of 10 points that were deemed non-implausible by the emulator `em1d_1`.
+
+Having obtained these new points, let's include them on our plot (blue dots) to demonstrate the emulator's logic.
+
+```{r fig.width = 7, fig.height = 7}
+plot(data = plotting1d, f ~ x, ylim = c(min(plotting1d[,-1]), max(plotting1d[,-1])),
+     type = 'l', main = "Emulation of a Simple 1-dimensional Function", xlab = "Parameter value", 
+     ylab = "Function value")
+lines(data = plotting1d, E ~ x, col = 'blue')
+lines(data = plotting1d, min ~ x, col = 'red', lty = 2)
+lines(data = plotting1d, max ~ x, col = 'red', lty = 2)
+points(data = data1d, f ~ x, pch = 16, cex = 1)
+legend('topleft', inset = c(0.05, 0.05), legend = c("Function value", "Emulated value", "Uncertainty Bounds"),
+       col = c('black', 'blue', 'red'), lty = c(1,1,2))
+abline(h = target1d$f$val, lty = 2)
+abline(h = target1d$f$val + 3*target1d$f$sigma, lty = 2)
+abline(h = target1d$f$val - 3*target1d$f$sigma, lty = 2)
+points(x = unlist(new_points1d, use.names = F), y = func(unlist(new_points1d, use.names = F)), 
+       pch = 16, col = 'blue')
 ```
 
 
-## Missing data handling
-# Description of calibration methodology
-## Construction of emulators
-### General structure of an emulator (role of various parameters)
-### Sampling points (training/validation points)
-### Training first emulators           
-## Emulator diagnostics 
-### Implausibility measure (choice of cut-off)
-### Various forms of diagnostics 
-#### Simulator/emulator outputs comparison 
-#### Standard error of emulator outputs 
-#### Emulator/simulator implausibility 
-## Points generation 
-## Further waves
+There is a crucial point here. While the emulator has proposed points that lie in the desired range (particularly on the left hand side of the interval), it has also proposed points that certainly do not lie in that range. However, at these points  the range is contained within the band given by the emulator uncertainty bounds. Consider the right hand side of the interval: since the emulator has high variance there, it cannot rule out this region as unfeasible. This is the reason why `generate_new_runs` proposes points there: in this way, when a new emulator will be trained in the second wave of the process, it will be much more certain about the function value than our current emulator in the interval $[0.5,0.6]$. This will allow the new emulator to rule out the area quickly.
+
+## Second Wave
+
+The second wave is very similar to the first one: the model is evaluated at points in `new_points1d` and the outputs are used to train new emulators.  
+
+```{r fig.width = 7, fig.height = 7}
+new_data1d <- data.frame(x = unlist(new_points1d, use.names = F), f = func(unlist(new_points1d, use.names = F)))
+
+pre_em1d_2 <- emulator_from_data(new_data1d, c('f'), ranges1d, deltas = 0, lik.method = 'nl')
+
+em1d_2 <- pre_em1d_2[[1]]$adjust(new_data1d, 'f')
+```
+
+We then get the new emulator's expectation and variance at points in `test_points`:
+
+```{r fig.width = 7, fig.height = 7}
+em1d_2_results <- data.frame(E = em1d_2$get_exp(test_points), V = em1d_2$get_cov(test_points))
+plotting1d2 <- data.frame(x = plotting1d$x, f = plotting1d$f, E = em1d_2_results$E,
+                          max = em1d_2_results$E + 3*sqrt(em1d_2_results$V),
+                          min = em1d_2_results$E - 3*sqrt(em1d_2_results$V))
+plot(data = plotting1d2, f ~ x, ylim = c(min(plotting1d2[,-1]), max(plotting1d2[,-1])),
+     type = 'l', main = "Emulator of a Simple 1-dimensional Function: Wave 2", xlab = "Parameter value", 
+     ylab = "Function value")
+lines(data = plotting1d2, E ~ x, col = 'blue')
+lines(data = plotting1d2, max ~ x, col = 'red', lty = 2)
+lines(data = plotting1d2, min ~ x, col = 'red', lty = 2)
+points(data = new_data1d, f ~ x, pch = 16, cex = 1)
+legend('topleft', inset = c(0.05, 0.05), legend = c("Function value", "Emulated value", "Uncertainty Bounds"), 
+       col = c('black', 'blue', 'red'), lty = c(1,1,2))
+```
+
+This plot underlines the importance of using all waves of emulation. The first wave is trained over the entire space, and so gives a moderately confident estimate of the true function value on the interval $[0, 0.6]$. The second-wave emulator is trained only on regions that we need to be more certain of: it therefore does not have the information about any parts of the space for which it was not given points (the central region, here). So in this wave of history matching, we must use both the wave-1 and wave-2 emulators to propose points.
+
+```{r, fig.width = 7, fig.height = 7}
+new_new_points1d <- generate_new_runs(c(em1d_2, em1d_1), ranges1d, 10, 
+                                      z = c(target1d, target1d),
+                                      method = 'lhs', include_line = F)
+
+plot(data = plotting1d2, f ~ x, ylim = c(min(plotting1d2[,-1]), max(plotting1d2[,-1])),
+     type = 'l', main = "Emulator of a Simple 1-dimensional Function: Wave 2", xlab = "Parameter value", 
+     ylab = "Function value")
+lines(data = plotting1d2, E ~ x, col = 'blue')
+lines(data = plotting1d2, max ~ x, col = 'red', lty = 2)
+lines(data = plotting1d2, min ~ x, col = 'red', lty = 2)
+points(data = new_data1d, f ~ x, pch = 16, cex = 1)
+legend('topleft', inset = c(0.05, 0.05), legend = c("Function value", "Emulated value (wave 2)", 
+                                                    "Uncertainty Bounds"), col = c('black', 'blue', 'red'), 
+                                                    lty = c(1,1,2))
+abline(h = target1d$f$val, lty = 2)
+abline(h = target1d$f$val + 3*target1d$f$sigma, lty = 2)
+abline(h = target1d$f$val - 3*target1d$f$sigma, lty = 2)
+points(x = unlist(new_new_points1d, use.names = F), y = func(unlist(new_new_points1d, use.names = F)), 
+       pch = 16, col = 'blue')
+```
+
+At the end of the second wave we see that all proposed points (in blue) are within the target bounds. Since all the points suggested give a good fit, we can end here the history matching process.
+
 <!--
 # TJ material
 ```{r, child = "_setup.Rmd", include = F, purl = F, cache = F}
 ```
-
-Basically a standard Bookdown template with a few tweaks. New chapters need to be in separate '.Rmd' files, where each file starts with a chapter heading as seen [here](https://bookdown.org/yihui/bookdown/usage.html). In order to use the task and solution blocks in \LaTeX, you must input the order of the files into the `_bookdown.yml` file, and the first file must be called `index.Rmd` e.g.
 
 ```
 rmd_files:
@@ -129,274 +288,7 @@ rmd_files:
 output_dir: "docs"
 ```
 
-The `latex:` path above ***must*** have `'ch_appendix.Rmd'` as its last entry. This ensures that the appendix is properly formatted for the solutions to the problems.
-
-You must have the following lines at the start of your `index.Rmd` file:
-
-````
-```{r, child = "_setup.Rmd", include = F, purl = F, cache = F}`r ''`
-```
-````
-
-There are a couple of useful special blocks. A `task` block, and a `solution` block. These can be used as e.g.
-
-````
-```{task}`r ''`
-Here is a task written in **markdown**.
-```
-````
-
-which renders as:
-
-```{task}
-Here is a task written in **markdown**.
-```
-
-You can include chunks within the `task` chunk, but you need to use double backticks *within* the chunk, and leave carriage returns around the internal chunk e.g.
-
-````
-
-```{task}`r ''`
-
-``{r}
-x <- 2 + 2
-x
-``
-
-```
-
-````
-
-which renders as:
-
-```{task}
-
-``{r}
-x <- 2 + 2
-x
-``
-
-```
-
-Be careful to have suitable carriage returns around e.g. `enumerate` or `itemize` environments inside the chunk also. For example:
-
-````
-
-```{task}`r ''`
-Here is a list:
-1. item 1
-2. item 2
-```
-
-```` 
-
-will not render nicely. But
-
-````
-
-```{task}`r ''`
-Here is a list:
-
-1. item 1
-2. item 2
-
-```
-
-```` 
-
-will:
-
-```{task}
-Here is a list:
-
-1. item 1
-2. item 2
-
-```
-
-The `solution` chunk works in the same way, and the numbers will follow the previous `task` chunk (so you can set tasks without solutions) e.g.
-
-````
-
-```{task}`r ''`
-Add 2 and 2 together
-```
-
-```{solution}`r ''`
-
-``{r}
-2 + 2
-``
-
-```
-
-````
-
-gives:
-
-```{task}
-Add 2 and 2 together
-```
-
-```{solution}
-
-``{r}
-2 + 2
-``
-
-```
-
-## Additional extensions
-
-### Different task and solution titles
-
-Task and solution boxes can also be given different names using the `title` option e.g.
-
-````
-
-```{task, title = "Question"}`r ''`
-What is the meaning of life, the universe and everything?
-```
-
-```{solution, title = "Answer"}`r ''`
-Why 42 of course!
-```
-
-````
-
-gives:
-
-```{task, title = "Question"}
-What is the meaning of life, the universe and everything?
-```
-
-```{solution, title = "Answer"}
-Why 42 of course!
-```
-
-### Turning tasks and solutions on and off
-
-Sometimes you might want to hide task and/or solution boxes. This can be done with the `renderTask` and `renderSol` chunk options, which can be set globally or locally. For example:
-
-````
-
-```{task, title = "Question"}`r ''`
-Can I set a task and not show the answer?
-```
-
-```{solution, title = "Answer", renderSol = FALSE}`r ''`
-Indeed, though you won't see this answer unless `renderSol = TRUE`...
-```
-
-````
-
-typesets as:
-
-```{task, title = "Question"}
-Can I set a task and not show the answer?
-```
-
-```{solution, title = "Answer", renderSol = FALSE}
-Indeed, though you won't see this answer unless `renderSol = TRUE`...
-```
-
-### Tabbed boxed environments
-
-Originally developed to put base R and `tidyverse` solutions side-by-side, using a `multCode = T` option to the solution box. Here the two tabs are separated by four consecutive hashes: `####`, and the `titles` option gives the tab titles (these can be set globally if preferred) e.g.
-
 ```{r, include = F}
 library(tidyverse)
 ```
-
-````
-
-```{task}`r ''`
-Filter the `iris` data by `Species == "setosa"` and find the mean `Petal.Length`.
-```
-
-```{solution, multCode = T, titles = c("Base R", "tidyverse")}`r ''`
-
-``{r}
-## base R solution
-mean(iris$Petal.Length[
-    iris$Species == "setosa"])
-``
-
-####
-
-``{r}
-## tidyverse solution
-iris %>% 
-    filter(Species == "setosa") %>%
-    select(Petal.Length) %>%
-    summarise(mean = mean(Petal.Length))
-``
-    
-```
-
-````
-
-will typeset to:
-
-```{task}
-Filter the `iris` data by `Species == "setosa"` and find the mean `Petal.Length`.
-```
-
-```{solution, multCode = T, titles = c("Base R", "tidyverse")}
-
-``{r}
-## base R solution
-mean(iris$Petal.Length[
-    iris$Species == "setosa"])
-``
-
-####
-
-``{r}
-## tidyverse solution
-iris %>% 
-    filter(Species == "setosa") %>%
-    select(Petal.Length) %>%
-    summarise(mean = mean(Petal.Length))
-``
-    
-```
-
-Note that there is also a `multCode` chunk that does not link to task and solution boxes e.g.
-
-````
-
-```{multCode}`r ''`
-
-Two options: 
-
-* Option 1
-
-####
-
-Two options:
-    
-* Option 2
-
-```
-
-````
-
-will typeset to:
-
-```{multCode}
-
-Two options: 
-
-* Option 1
-
-####
-
-Two options:
-    
-* Option 2
-
-```
-
-The `titles` option can be set as before.
 -->
