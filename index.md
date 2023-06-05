@@ -183,12 +183,12 @@ target1d <- list(f = list(val = 0, sigma = 0.05))
 
 Again, the use of a list of lists is to ensure it generalises to multiple outputs.
 
-We can now use the function `generate_new_runs` to obtain a new set of points for the second wave. There are a multitude of different methods that can be used to propose the new points: in this particular one-dimensional case, it makes sense to take the most basic approach. This is to generate a large number of space-filling points, reject those that the emulator rules out as implausible, and select the subset of the remaining points that has the maximal minimum distance between them (so as to cover as much of the non-implausible space as possible). This can be done by setting `method` to `lhs` (Latin Hypercube sampling) and `measure.method` to `maximin`: 
+We can now use the function `generate_new_design` to obtain a new set of points for the second wave. There are a multitude of different methods that can be used to propose the new points: in this particular one-dimensional case, it makes sense to take the most basic approach. This is to generate a large number of space-filling points, reject those that the emulator rules out as implausible, and select the subset of the remaining points that has the maximal minimum distance between them (so as to cover as much of the non-implausible space as possible). This can be done by setting `method` to `lhs` (Latin Hypercube sampling) and `measure.method` to `maximin`: 
 
 
 
 ```r
-new_points1d <- generate_new_runs(em1d_1, 10, target1d,
+new_points1d <- generate_new_design(em1d_1, 10, target1d,
                                   method = 'lhs', 
                                   measure.method = 'maximin')
 ```
@@ -218,7 +218,7 @@ points(x = unlist(new_points1d, use.names = F), y = func(unlist(new_points1d, us
 <img src="_main_files/figure-html/unnamed-chunk-13-1.png" style="display: block; margin: auto;" />
 
 
-There is a crucial point here. While the emulator has proposed points that lie in the desired range (particularly on the left hand side of the interval), it has also proposed points that certainly do not lie in that range. However, at these points  the range is contained within the band given by the emulator uncertainty bounds. Consider the right hand side of the interval: since the emulator has high variance there, it cannot rule out this region as unfeasible. This is the reason why `generate_new_runs` proposes points there: in this way, when a new emulator will be trained in the second wave of the process, it will be much more certain about the function value than our current emulator in the interval $[0.5,0.6]$. This will allow the new emulator to rule out the area quickly.
+There is a crucial point here. While the emulator has proposed points that lie in the desired range (particularly on the left hand side of the interval), it has also proposed points that certainly do not lie in that range. However, at these points  the range is contained within the band given by the emulator uncertainty bounds. Consider the right hand side of the interval: since the emulator has high variance there, it cannot rule out this region as unfeasible. This is the reason why `generate_new_design` proposes points there: in this way, when a new emulator will be trained in the second wave of the process, it will be much more certain about the function value than our current emulator in the interval $[0.5,0.6]$. This will allow the new emulator to rule out the area quickly.
 
 ## Second Wave
 
@@ -250,7 +250,7 @@ This plot underlines the importance of using all waves of emulation. The first w
 
 
 ```r
-new_new_points1d <-  generate_new_runs(c(em1d_2, em1d_1), 10, z = c(target1d, target1d),
+new_new_points1d <-  generate_new_design(c(em1d_2, em1d_1), 10, z = c(target1d, target1d),
                                       method = 'lhs', measure.method = 'maximin')
 plot(data = plotting1d2, f ~ x, ylim = c(min(plotting1d2[,-1]), max(plotting1d2[,-1])),
      type = 'l', main = "Emulator of a Simple 1-dimensional Function: Wave 2", xlab = "Parameter value", 
